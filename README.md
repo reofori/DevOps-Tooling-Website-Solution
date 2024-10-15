@@ -411,7 +411,7 @@ sudo yum install httpd -y
 ```
 sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 ```
-![image](assets/web_server_14_install_all.jpg)
+
 
 **To confirm that EPEL has been added**
 ```
@@ -460,7 +460,6 @@ sudo reboot
 sudo dnf -y install http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y
 ```
 
-![image](assets/web_server_19_updates.jpg)
 
 Before installing PHP, we need to check the available PHP streams in the repository.
 
