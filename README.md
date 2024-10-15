@@ -99,19 +99,19 @@ Create logical volumes `lv-opt` `lv-apps`, and `lv-logs`.
 ```
 sudo yum install lvm2
 ```
-[image](images/ssh5.png)
+![image](images/ssh5.png)
 
 **Check for available partitions.**
 ```
 sudo lvmdiskscan 
 ```
-[image](images/ssh6.png)
+![image](images/ssh6.png)
 
 **Create Physical Volumes Use pvcreate utility to mark each of 3 disks as physical volumes (PVs) to be used by LVM**
 ```
 sudo pvcreate /dev/xvdd1 /dev/xvde1 /dev/xvdf1
 ```
-[image](images/ssh7.png)
+![image](images/ssh7.png)
 
 **Verify that your Physical volume has been created successfully**
 ```
@@ -123,13 +123,13 @@ sudo pvs
 ```
 sudo vgcreate webdata-vg /dev/xvdd1 /dev/xvde1 /dev/xvdf1
 ```
-[image](images/ssh9.png)
+![image](images/ssh9.png)
 
 **Verify that your VG has been created successfully**
 ```
 sudo vgs
 ```
-[image](images/ssh10.png)
+![image](images/ssh10.png)
 
 **Create Logical Volumes Use `lvcreate utility` to create logical volumes
 
@@ -138,7 +138,7 @@ sudo lvcreate -L 14G -n lv-apps webdata-vg
 sudo lvcreate -L 14G -n lv-logs webdata-vg
 sudo lvcreate -L 14G -n lv-opt  webdata-vg
 ```
-[image](images/ssh11.png)
+![image](images/ssh11.png)
 
 there is no enough space to create `lv-opt` and we have to make free some spaces
 
@@ -147,20 +147,20 @@ there is no enough space to create `lv-opt` and we have to make free some spaces
 ``` 
 sudo lvs
 ```
-[image](images/ssh12.png)
+![image](images/ssh12.png)
 
 **Verify the entire setup #view complete setup - VG , PV, and LV**
 ```
 sudo vgdisplay -v
 ```
-[image](images/ssh13.png)
+![image](images/ssh13.png)
 
 3. Instead of formatting the disks as `ext4` you will have to format them as `xfs`
 - Ensure there are 3 Logical Volumes `lv-opt` `lv-apps`, and `lv-logs`
 ```
 sudo lsblk
 ```
-[image](images/ssh14.png)
+![image](images/ssh14.png)
 
 **Format the Logical Volumes as `XFS`:**
 ```
@@ -168,7 +168,7 @@ sudo mkfs.xfs /dev/webdata-vg/lv-apps
 sudo mkfs.xfs /dev/webdata-vg/lv-logs
 sudo mkfs.xfs /dev/webdata-vg/lv-opt
 ```
-[image](images/ssh15.png)
+![image](images/ssh15.png)
 
 - Create mount points on `/mnt` directory for the logical volumes as follows: `Mount lv-apps` on `/mnt/apps` - To be used by webservers ,`Mount lv-logs` on `/mnt/logs` - To be used by webserver logs, `Mount lv-opt` on `/mnt/opt` - To be used by Jenkins server in Project 8
 
@@ -182,7 +182,7 @@ sudo mkdir /mnt/opt
 cd /mnt
 ls
 ```
-[image](images/ssh18.png)
+![image](images/ssh18.png)
 
 **Mount Logical Volumes**
 
@@ -191,7 +191,7 @@ sudo mount /dev/webdata-vg/lv-apps /mnt/apps
 sudo mount /dev/webdata-vg/lv-logs /mnt/logs
 sudo mount /dev/webdata-vg/lv-opt /mnt/opt
 ```
-[image](images/ssh17.png)
+![image](images/ssh17.png)
 
 
 4. Install NFS server, configure it to start on reboot and make sure it is up and running
@@ -200,12 +200,12 @@ sudo mount /dev/webdata-vg/lv-opt /mnt/opt
 ```
 sudo yum -y update
 ```
-[image](images/ssh20.png)
+![image](images/ssh20.png)
 
 ```
 sudo yum install nfs-utils -y
 ```
-[image](images/ssh21.png)
+![image](images/ssh21.png)
 
 **Start and Enable NFS Server**:
 
@@ -218,7 +218,7 @@ sudo systemctl enable nfs-server.service
 ```
 sudo systemctl status nfs-server.service
 ```
-[image](images/ssh22.png)
+![image](images/ssh22.png)
 
 
 5. Export the NFS Mounts'
@@ -234,33 +234,29 @@ sudo chmod -R 777 /mnt/apps
 sudo chmod -R 777 /mnt/logs
 sudo chmod -R 777 /mnt/opt
 ```
-
-![image](assets/nfs_server_%2043_set_permisions.jpg)
+![image](images/ssh23.png)
 
 **Restart NFS Server**
 
 ```
 sudo systemctl restart nfs-server.service
 ```
+![image](images/ssh24.png)
 
-![image](assets/nfs_server_44_restart_nfs_server.jpg)
-
-6. Configure access to NFS for clients within the same subnet (example of Subnet CIDR - 172.31.32.0/20 ):
-
-![image](assets/nfs_server_45_subnet_cdir.jpg)
+Configure access to NFS for clients within the same subnet (example of Subnet CIDR - 172.31.32.0/20 ):
+![image](images/ssh25.png)
 
 ```
 sudo vim /etc/exports
 ```
-**Add the following lines**:
 
+**Add the following lines**:
 ```
 /mnt/apps 172.31.32.0/20(rw,sync,no_all_squash,no_root_squash)
 /mnt/logs 172.31.32.0/20(rw,sync,no_all_squash,no_root_squash)
 /mnt/opt 172.31.32.0/20(rw,sync,no_all_squash,no_root_squash)
 ```
-
-![image](assets/nfs_server_46_edit_nfs_exports.jpg)
+![image](images/ssh26.png)
 
 **save and exit from the editor by** `Esc + :wq!`
 
@@ -269,8 +265,7 @@ sudo vim /etc/exports
 ```
 sudo exportfs -arv
 ```
-
-![image](assets/nfs_server_48_export.jpg)
+![image](images/ssh28.png)
 
 
 7. Check which port is used by NFS and open necessary ports in Security Groups (add new Inbound Rule)
@@ -280,13 +275,34 @@ sudo exportfs -arv
 ```
 rpcinfo -p | grep nfs
 ```
-
-![image](assets/nfs_server_49_check%20ports.jpg)
+![image](images/ssh29.png)
 
 > **Important note**: In order for NFS server to be accessible from our client,we open following ports:
 - `TCP 111`
 - `UDP 111`
 - `UDP 2049`
 - `UDP 2049`
+  
+![image](images/ssh30.png)
 
-![image](assets/port_range.jpg)
+## Step 2 - Configure the database server
+
+launch an Ec2 instance with neccessary configurations
+
+![Screenshot (298)](https://github.com/highbee2810/STEGHUB-DevOps-cloud-Engineering/assets/155490206/e9706e72-9736-4bce-b868-45b8cd1356d9)
+
+ssh into the instance
+![image](images/dbserver0.png)
+
+Install MySQL server
+
+```
+sudo apt install mysql-server
+```
+
+Run mysql secure script
+
+```
+sudo mysql_secure_installation
+```
+![Screenshot (301)](https://github.com/highbee2810/STEGHUB-DevOps-cloud-Engineering/assets/155490206/807c9e51-b8fb-4f35-8ee7-662ce0325c90)
