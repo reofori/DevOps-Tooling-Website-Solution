@@ -1,4 +1,4 @@
-# DevOps Tooling Website Solution
+![dbserver1](https://github.com/user-attachments/assets/937fbf66-ce3a-4a43-8c7e-c53b414c91b8)# DevOps Tooling Website Solution
 
 This documentation outlines the step-by-step process of setting up a network file system (NFS) server on Red Hat Enterprise Linux 9, configuring MySQL on an Ubuntu server, and deploying a tooling website across multiple web servers. The goal is to ensure a scalable, fault-tolerant infrastructure that maintains data consistency across web servers using shared storage, while keeping the system stateless.
 
@@ -288,21 +288,63 @@ rpcinfo -p | grep nfs
 ## Step 2 - Configure the database server
 
 launch an Ec2 instance with neccessary configurations
-
-![Screenshot (298)](https://github.com/highbee2810/STEGHUB-DevOps-cloud-Engineering/assets/155490206/e9706e72-9736-4bce-b868-45b8cd1356d9)
+![image](images/dbserver.png)
 
 ssh into the instance
 ![image](images/dbserver0.png)
 
 Install MySQL server
-
 ```
+sudo apt update
+```
+![image](images/ssh50.png)
+```
+
 sudo apt install mysql-server
 ```
+![image](images/ssh51.png)
 
 Run mysql secure script
-
 ```
 sudo mysql_secure_installation
 ```
-![Screenshot (301)](https://github.com/highbee2810/STEGHUB-DevOps-cloud-Engineering/assets/155490206/807c9e51-b8fb-4f35-8ee7-662ce0325c90)
+![image](images/dbserver3.png)
+
+ Log in to the MySQL server as the `root user`:
+```
+sudo mysql -u root -p
+```
+![image](images/ssh52.png)
+
+Create the  database `tooling`, create the `webaccess` user, and grant permissionns to the `webaccess` user on the `tooling` database:
+
+```sql
+CREATE DATABASE tooling;
+CREATE USER 'webaccess'@'172.31.32.0/20' IDENTIFIED BY 'Password.1';
+GRANT ALL PRIVILEGES ON tooling.* TO 'webaccess'@'172.31.32.0/20';
+FLUSH PRIVILEGES;
+```
+
+5. Verify the User and Database with:
+```sql
+SHOW GRANTS FOR 'webaccess'@'172.31.32.0/20';
+```
+![image](images/ssh53.png)
+
+Make sure the MySQL server is configured to allow remote connections by editing the MySQL configuration:
+```bash
+sudo vi /etc/mysql/mysql.conf.d/mysqld.cnf
+```
+![image](images/ssh55.png)
+
+- change the bind number from `127.0.0.1 to 0.0.0.0
+![image](images/ssh54.png)
+
+7. Restart Mysql:
+```bash
+sudo systemctl restart mysql
+```
+![image](images/ssh56.png)
+
+8. Add a new inbound rule for MySQL
+
