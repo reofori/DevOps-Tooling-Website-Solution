@@ -287,10 +287,12 @@ rpcinfo -p | grep nfs
 
 ## Step 2 - Configure the database server
 
-launch an Ec2 instance with neccessary configurations
+launch an Ec2 instance with neccessary configurations:
+
 ![image](images/dbserver.png)
 
-ssh into the instance
+ssh into the instance:
+
 ![image](images/dbserver0.png)
 
 Install MySQL server
@@ -347,4 +349,290 @@ sudo systemctl restart mysql
 ![image](images/ssh56.png)
 
 8. Add a new inbound rule for MySQL
+
+## Step 3 - Prepare the Web Servers
+
+ **In this step we will do the following**
+ - Configure NFS client (this step must be done on all _three servers_)
+ - Deploy a Tooling application to our Web Servers into a shared NFS folder
+ - Configure the Web Servers to work with a single MySQL database
+**For server One**
+
+1. Launch a new EC2 instance with RHEL 9 Operating System
+
+
+2. Install NFS client
+```
+sudo yum update -y
+```
+![image](images/ssh71.png)
+
+```
+sudo yum install nfs-utils nfs4-acl-tools -y
+```
+![image](images/ssh45.png)
+
+
+3. Mount /var/www/ and target the NFS server's export for apps
+```
+sudo mkdir /var/www
+sudo mount -t nfs -o rw,nosuid 172.31.28.107:/mnt/apps /var/www
+```
+![image](images/server3.png)
+
+4. Verify that NFS was mounted successfully
+
+```
+ df -h
+ ```
+![image](images/server3a.png)
+  
+Make sure that the changes will persist on Web Server after reboot:
+
+```
+sudo vi /etc/fstab
+```
+
+add following line
+
+```
+172.31.28.107:/mnt/apps /var/www nfs defaults 0 0
+```
+![image](images/server3b.png)
+
+5. Install Remi's repository, Apache and PHP
+
+```
+sudo yum install httpd -y
+```
+
+![image](images/server3c.png)
+
+```
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+```
+![image](assets/web_server_14_install_all.jpg)
+
+**To confirm that EPEL has been added**
+```
+ rpm -qi epel-release
+```
+
+```
+sudo dnf -y install http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y
+```
+![image](images/server3d.png)
+> If you encounter the "Killed" message while running , it likely means the process was terminated due to running out of memory. Here are steps to mitigate this:
+Updating System with Limited Memory
+
+Create a swap file to increase virtual memory:
+
+
+```
+sudo fallocate -l 1G /swapfile
+sudo dd if=/dev/zero of=/swapfile bs=1M count=512
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+
+**Make the swap file permanent:**
+
+```
+echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
+```
+
+**Update and Clean the System and re run**
+
+```
+sudo dnf upgrade --refresh -y
+sudo dnf upgrade -y dnf
+sudo dnf update -y
+sudo dnf clean all
+sudo reboot
+```
+
+
+**Tehn Re run again**
+
+```
+sudo dnf -y install http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y
+```
+
+![image](assets/web_server_19_updates.jpg)
+
+Before installing PHP, we need to check the available PHP streams in the repository.
+
+```
+ sudo dnf module list php -y
+```
+
+```
+sudo dnf module reset php
+```
+
+```
+sudo dnf module enable php:remi-8.2 -y
+```
+
+
+```
+sudo dnf install php php-opcache php-gd php-curl php-mysqlnd
+```
+
+
+```
+php -v
+```
+
+
+```
+sudo systemctl start php-fpm
+```
+
+```
+sudo systemctl enable php-fpm
+```
+
+```
+sudo setsebool -P httpd_execmem 1
+```
+
+
+
+> Repeat steps 1-5 for another 2 Web Servers and finally 
+
+
+
+
+
+6. Verify NFS Mount and Apache Setup 
+
+Verify that Apache files and directories are available on the Web Server in `/var/www `and also on the NFS server in `/mnt/apps`. If you see the same files - it means NFS is mounted correctly.
+
+```
+cd /var/www
+```
+
+
+```
+ls -l
+```
+
+
+ You can try to create a new file
+```
+sudo touch test.txt
+```
+
+
+**We can see the text.txt file created inside our nfs server `/mnt/apps` directory. So they are communicating perfectly.**
+
+
+
+from one server and check if the same file is accessible from other Web Servers.
+
+
+
+7. Locate the log folder for Apache on the Web Server and mount it to NFS server's export for logs. Repeat step №4 to make sure the mount point will persist after reboot.
+```
+sudo mkdir -p /var/log/httpd
+```
+
+
+```
+sudo mount -t nfs -o rw,nosuid 172.31.36.105:/mnt/logs /var/log/httpd
+```
+
+
+Edit the /etc/fstab file so that it persists even after reboot
+```
+sudo vi /etc/fstab
+```
+add the following lines
+```
+172.31.36.105:/mnt/logs /var/log/httpd nfs defaults 0 0
+```
+
+
+8. Fork the tooling source code from Darey.io Github Account to your Github account.
+**Download git**
+```
+sudo yum install git
+```
+
+
+**Clone the repository you forked the project into**
+```
+git clone https://github.com/gashawgedef/tooling.git
+```
+
+
+9. Deploy the tooling website's code to the Webserver. Ensure that the html folder from the repository is deployed to /var/www/html
+```
+sudo cp -R html/. /var/www/htm/
+```
+
+
+> Note 1: Do not forget to open TCP port 80 on the Web Server.
+
+> Note 2: If you encounter 403 Error - check permissions to your /var/www/html folder and also disable SELinux sudo setenforce 0 To make this change permanent - open following config file
+
+**Disable SELinux**
+```
+sudo setenforce 0
+```
+
+
+```
+sudo vi /etc/sysconfig/selinux
+```
+and set SELINUX=disabled
+
+
+ **Then restrt httpd**.
+```
+sudo systemctl restart httpd
+```
+
+```
+sudo systemctl status httpd
+```
+
+
+10. Update the website's configuration to connect to the database (in /var/www/html/functions.php file). Apply `tooling-db.sql` script to your database using this command
+ 
+
+ ```
+  mysql -h 172.31.37.78 -u webaccess -p -D tooling < tooling-db.sql
+
+```
+
+
+
+11. Create in MySQL a new admin user with `username: myuser` and `password: password`:
+
+```
+mysql -h 172.31.37.78 -u webaccess -p
+```
+
+
+```
+INSERT INTO `users` (`id`, `username`, `password`, `email`, `user_type`, `status`) 
+VALUES (2, 'webaccess_user', '5f4dcc3b5aa765d61d8327deb882cf99', 'user@mail.com', 'admin', '1');
+
+```
+![image](images/ssh70.png)
+
+12. Open the website in your browser http://`Web-Server-Public-IP-Address`or `Public-DNS-Name`/index.php and make sure you can login into the website with  your user and password.
+
+![image](images/final.png)
+
+![image](images/last%20page.png)
+
+
+### End of the Project
+We successfully implemented and deployed a DevOps tooling website in AWS, designed to provide seamless access to essential DevOps tools within the corporate infrastructure. The project involved setting up three web servers, all connected to a central database server. Additionally, a Network File System (NFS) was configured to enable the web servers to share common files, ensuring synchronized access to data across the infrastructure. This scalable solution enhances the efficiency of DevOps operations by integrating a reliable, high-availability system for managing DevOps tools.
+
 
