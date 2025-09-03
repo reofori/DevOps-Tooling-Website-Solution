@@ -19,6 +19,7 @@ This project involved setting up logical volumes on the NFS server, configuring 
 2. Basic knowledge of Linux commands and how to manage storage on a Linux server.
 3. Basic knowledge of Network-attached storage (NAS), Storage Area Networks (SAN), and related protocols like NFS, FPT, SFTP, SMB, iSCSI.
 4. Knowledge of Block-level storage and how it is used on the Cloud.
+   
 #### ARCHTECTURAL DESIGN
 ![image](images/images1.png)
 
