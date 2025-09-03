@@ -2,7 +2,7 @@
 # Self Study, Challenges and  Solutions
 
 ## Network-attached storage (NAS), Storage Area Network (SAN)  NFS, (s)FTP, SMB, iSCSI. 
-> Now let getstaered by breake down each conceptes one by one 
+> Now let get started by breaking down each concepts one by one. 
 
 ## Storage Technologies and Protocols
 
